@@ -1,20 +1,20 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Salman-Al-Editor 🦾📱🚀🔥
 
-# Run and deploy your AI Studio app
+Official AI Photo Editor by Salman. Zero-cost background removal and template styling.
 
-This contains everything you need to run your app locally.
+## 🚀 APK Build Instructions (GitHub Actions)
 
-View your app in AI Studio: https://ai.studio/apps/0a99f496-b0c4-44a5-bb6c-df31753712e5
+To get the **Green Check (✅)** and download your APK:
 
-## Run Locally
+1.  **Export to GitHub:** Click the **Settings (⚙️)** icon in AI Studio and select **"Export to GitHub"**.
+2.  **Select Repository:** Choose `oo8195008-stack/Salman-Al-Editor`.
+3.  **Wait for Build:** Go to the **Actions** tab in your GitHub repository. The "Build Android APK" workflow will start automatically.
+4.  **Download APK:** Once finished (Green Check ✅), click on the build run and download the `Salman-Edit-Z-APK` from the **Artifacts** section.
 
-**Prerequisites:**  Node.js
+## 🛠️ Tech Stack
+- **Frontend:** React + Vite + Tailwind CSS
+- **AI Engine:** MediaPipe (Local Processing)
+- **Mobile:** Capacitor (Android)
+- **CI/CD:** GitHub Actions (Java 21, Android SDK 35)
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+© 2026 Salman-Edit-Z

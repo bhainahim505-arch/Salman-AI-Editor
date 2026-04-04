@@ -50,13 +50,10 @@ jobs:
 
       - name: Prepare Capacitor Android
         run: |
-          if [ ! -d "android" ]; then
-            echo "Android folder missing, adding platform..."
-            npx cap add android
-          else
-            echo "Android folder exists, syncing..."
-            npx cap sync
-          fi
+          # Nuclear Option: Force recreate android platform to avoid sync issues
+          rm -rf android
+          npx cap add android
+          npx cap sync
           npx cap copy android
 
       - name: Build Android APK

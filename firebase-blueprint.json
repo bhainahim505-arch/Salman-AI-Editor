@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Config": {
+      "title": "Application Configuration",
+      "description": "Stores global app settings like API keys, maintenance mode, and UI styles.",
+      "type": "object",
+      "properties": {
+        "apiKeys": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of active Google API keys."
+        },
+        "maintenanceMode": {
+          "type": "boolean",
+          "description": "If true, the app shows a maintenance screen."
+        },
+        "watermarkConfig": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string" },
+            "color": { "type": "string" },
+            "size": { "type": "number" },
+            "opacity": { "type": "number" }
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["apiKeys"]
+    }
+  },
+  "firestore": {
+    "/config/api_keys": {
+      "schema": "Config",
+      "description": "The main document storing all active API keys."
+    }
+  }
+}

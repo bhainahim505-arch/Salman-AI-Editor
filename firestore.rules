@@ -1,0 +1,55 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: config
+// Document ID: api_keys
+// Fields:
+//   - apiKeys: list of strings (required) - Active API keys
+//   - updatedAt: timestamp (optional) - Last update time
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "oo8195008@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidConfig(data) {
+      return data.keys().hasAll(['apiKeys']) &&
+             data.apiKeys is list &&
+             data.apiKeys.size() <= 50 &&
+             (!('maintenanceMode' in data) || data.maintenanceMode is bool) &&
+             (!('watermarkConfig' in data) || data.watermarkConfig is map);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /config/api_keys {
+      // App needs to read keys to function
+      allow read: if isAuthenticated();
+      // Only admin can update the "asleha" (keys)
+      allow write: if isAdmin() && isValidConfig(request.resource.data);
+    }
+
+    // User profiles (for admin role check)
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated() && request.auth.uid == userId && 
+                     (!('role' in request.resource.data) || request.resource.data.role == resource.data.role || isAdmin());
+    }
+  }
+}

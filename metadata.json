@@ -1,0 +1,7 @@
+{
+  "name": "Salman-Edit-Z",
+  "description": "Advanced CapCut-style Photo/Video editor with 100% Local AI (Zero-API), MediaPipe background removal, and cinematic VFX filters.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

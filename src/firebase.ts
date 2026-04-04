@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK
@@ -62,5 +62,27 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
+  
+  // Check for "client is offline" which indicates config issues
+  if (errInfo.error.includes('the client is offline') || errInfo.error.includes('unavailable')) {
+    console.error("CRITICAL: Firestore is unreachable. Check firebase-applet-config.json and project settings.");
+  }
+  
   throw new Error(JSON.stringify(errInfo));
+}
+
+// Diagnostic test for Firestore connection
+export async function testConnection() {
+  try {
+    console.log("Testing Firestore Connection...");
+    // Try to get a non-existent doc from server to force a network check
+    await getDocFromServer(doc(db, '_diagnostics', 'connection'));
+    console.log("Firestore Connection: OK 🦾");
+  } catch (error) {
+    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
+      console.error("CRITICAL: Firestore is unreachable. This usually means the configuration in firebase-applet-config.json is incorrect or the database is not provisioned.");
+    } else {
+      console.warn("Firestore Connection Test (expected failure if doc missing, but connection is alive):", error);
+    }
+  }
 }

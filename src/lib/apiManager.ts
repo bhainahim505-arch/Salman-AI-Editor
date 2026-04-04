@@ -35,12 +35,17 @@ class APIManager {
 
   constructor() {
     this.initializeUsageMap();
-    this.setupRemoteConfig();
   }
 
-  private setupRemoteConfig() {
+  init() {
+    if (this.dynamicKeys.length === 0) {
+      this.setupRemoteConfig();
+    }
+  }
+
+  private setupRemoteConfig(retryCount = 0) {
     const configRef = doc(db, "config", "api_keys");
-    onSnapshot(configRef, (snapshot) => {
+    const unsubscribe = onSnapshot(configRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         console.log("🔥 Firebase: Remote Config Updated!", data);
@@ -68,7 +73,13 @@ class APIManager {
         }
       }
     }, (error) => {
-      console.warn("Firebase Remote Config Error (likely permission):", error.message);
+      console.warn(`Firebase Remote Config Error (Attempt ${retryCount + 1}):`, error.message);
+      
+      // Retry if unavailable (transient network/provisioning issue)
+      if ((error.message.includes('unavailable') || error.message.includes('offline')) && retryCount < 5) {
+        console.log(`Retrying Firestore connection in ${Math.pow(2, retryCount)}s...`);
+        setTimeout(() => this.setupRemoteConfig(retryCount + 1), Math.pow(2, retryCount) * 1000);
+      }
     });
   }
 

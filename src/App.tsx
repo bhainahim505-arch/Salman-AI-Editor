@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { auth, signIn, logOut } from "./firebase";
+import { auth, signIn, logOut, testConnection } from "./firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import Editor from "./components/Editor";
 import MediaUpload from "./components/MediaUpload";
 import { LogOut, User as UserIcon, Zap, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MediaType } from "./types";
+import { apiManager } from "./lib/apiManager";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,6 +17,11 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
+      if (u) {
+        console.log("User Authenticated: Starting Firestore Services 🦾");
+        testConnection();
+        apiManager.init();
+      }
     });
     return () => unsubscribe();
   }, []);

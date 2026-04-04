@@ -32,13 +32,16 @@ jobs:
       - name: Build Web App
         run: npm run build
 
-      - name: Add or Sync Capacitor Android
+      - name: Prepare Capacitor Android
         run: |
           if [ ! -d "android" ]; then
+            echo "Android folder missing, adding platform..."
             npx cap add android
           else
+            echo "Android folder exists, syncing..."
             npx cap sync
           fi
+          npx cap copy android
 
       - name: Build Android APK
         run: |

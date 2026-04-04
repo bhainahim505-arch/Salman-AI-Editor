@@ -24,7 +24,11 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
+
+      - name: Accept Android Licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Install Dependencies
         run: npm install
@@ -34,6 +38,7 @@ jobs:
 
       - name: Prepare Capacitor Android
         run: |
+          mkdir -p dist
           if [ ! -d "android" ]; then
             echo "Android folder missing, adding platform..."
             npx cap add android

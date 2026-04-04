@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Salman Edit Z</string>
+    <string name="title_activity_main">Salman Edit Z</string>
+    <string name="package_name">com.salman.editz</string>
+    <string name="custom_url_scheme">com.salman.editz</string>
+</resources>

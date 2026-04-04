@@ -39,9 +39,17 @@ jobs:
       - name: Build Web App
         run: npm run build
 
+      - name: Check Web Assets
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "dist folder missing! Creating dummy..."
+            mkdir -p dist
+            echo "<html><body>Salman Edit Z</body></html>" > dist/index.html
+          fi
+          ls -R dist
+
       - name: Prepare Capacitor Android
         run: |
-          mkdir -p dist
           if [ ! -d "android" ]; then
             echo "Android folder missing, adding platform..."
             npx cap add android

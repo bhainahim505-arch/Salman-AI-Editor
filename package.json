@@ -11,6 +11,7 @@
     "lint": "tsc --noEmit",
     "cap:sync": "npx cap sync",
     "cap:add": "npx cap add android",
+    "cap:force": "rm -rf android && npx cap add android && npx cap sync",
     "cap:open": "npx cap open android"
   },
   "dependencies": {

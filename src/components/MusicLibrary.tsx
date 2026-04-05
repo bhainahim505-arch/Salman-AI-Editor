@@ -43,6 +43,22 @@ const TRENDING_SONGS: Song[] = [
     url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
     duration: 15,
     thumbnail: "https://picsum.photos/seed/phonk/100/100"
+  },
+  {
+    id: "trending-5",
+    title: "Tiger Roar (Trap)",
+    artist: "Salman Edit Z",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+    duration: 25,
+    thumbnail: "https://picsum.photos/seed/roar/100/100"
+  },
+  {
+    id: "trending-6",
+    title: "Golden Palace Theme",
+    artist: "Royal Beats",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+    duration: 50,
+    thumbnail: "https://picsum.photos/seed/palace/100/100"
   }
 ];
 
@@ -108,22 +124,24 @@ export default function MusicLibrary({ onSelectMusic, onBeatSyncToggle, isBeatSy
 
       {/* Search & Upload */}
       <div className="flex gap-2">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <div className="flex-1 relative group">
+          <div className="absolute inset-0 bg-pink-500/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity rounded-xl" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-pink-500 transition-colors" />
           <input
             type="text"
-            placeholder="Search trending music..."
+            placeholder="Search Tiger Beats..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-2 pl-10 pr-4 text-sm text-zinc-300 focus:outline-none focus:border-pink-500/50 transition-all"
+            className="w-full bg-zinc-800/50 border border-zinc-700 group-focus-within:border-pink-500/50 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-300 focus:outline-none transition-all relative z-10"
           />
         </div>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="p-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-zinc-300 transition-all"
+          className="p-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-pink-500/30 rounded-xl text-zinc-300 transition-all relative group"
           title="Upload My Own Music"
         >
-          <Upload className="w-5 h-5" />
+          <div className="absolute inset-0 bg-pink-500/5 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Upload className="w-5 h-5 relative z-10" />
         </button>
         <input
           ref={fileInputRef}

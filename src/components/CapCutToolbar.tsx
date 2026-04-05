@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, Wand2, Zap, Flame, Loader2, Key, Crown, Activity } from "lucide-react";
+import { Plus, Wand2, Zap, Flame, Loader2, Key, Crown, Activity, Play, Pause } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface CapCutToolbarProps {
@@ -16,6 +16,8 @@ interface CapCutToolbarProps {
   isLocalMode: boolean;
   customKey: string | null;
   onCustomKeyChange: (key: string) => void;
+  isPlaying: boolean;
+  onTogglePlay: () => void;
 }
 
 export default function CapCutToolbar({
@@ -32,6 +34,8 @@ export default function CapCutToolbar({
   isLocalMode,
   customKey,
   onCustomKeyChange,
+  isPlaying,
+  onTogglePlay,
 }: CapCutToolbarProps) {
   return (
     <div className="w-full bg-black/80 backdrop-blur-xl border-t border-zinc-800 px-4 py-6">
@@ -99,6 +103,24 @@ export default function CapCutToolbar({
 
         {/* Main Toolbar */}
         <div className="overflow-x-auto no-scrollbar flex items-center gap-6 pb-2">
+          {/* Play/Pause Button */}
+          <button
+            onClick={onTogglePlay}
+            className="flex flex-col items-center gap-2 min-w-[80px] group transition-all"
+          >
+            <div className={cn(
+              "w-14 h-14 rounded-2xl flex items-center justify-center border transition-all relative overflow-hidden",
+              isPlaying 
+                ? "bg-zinc-800 border-zinc-700 group-hover:bg-zinc-700" 
+                : "bg-pink-600 border-pink-500 shadow-lg shadow-pink-500/20"
+            )}>
+              {isPlaying ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white fill-white" />}
+            </div>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+              {isPlaying ? "Pause" : "Play"}
+            </span>
+          </button>
+
           {/* Upload Button */}
           <button
             onClick={onUpload}

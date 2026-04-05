@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { SelfieSegmentation } from "@mediapipe/selfie_segmentation";
 import { FilterType, applyFilters } from "../lib/filters";
 import { GoogleGenAI } from "@google/genai";
-import { Download, Share2, Trash2, Loader2, Wand2, Plus, Layers, Music, Video, Image as ImageIcon, Sparkles, Activity, Crown, Maximize, Minimize, X, AlertTriangle, Play } from "lucide-react";
+import { Download, Share2, Trash2, Loader2, Wand2, Plus, Layers, Music, Video, Image as ImageIcon, Sparkles, Activity, Crown, Maximize, Minimize, X, AlertTriangle, Play, Pause } from "lucide-react";
 import { unityAds } from "../lib/unityAds";
 import FilterControls from "./FilterControls";
 import Timeline from "./Timeline";
@@ -85,6 +85,8 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
   const [adminAlert, setAdminAlert] = useState<string | null>(null);
   const [customKey, setCustomKey] = useState<string | null>(apiManager.getCustomKey());
   const [isMusicLibraryOpen, setIsMusicLibraryOpen] = useState(false);
+  const [isBeatSyncEnabled, setIsBeatSyncEnabled] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [beatIntensity, setBeatIntensity] = useState(0);
   const [musicVolume, setMusicVolume] = useState(0.8);
@@ -141,6 +143,29 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
     };
   }, [initAudio]);
 
+  // Sync all media elements with isPlaying state
+  useEffect(() => {
+    const syncMedia = () => {
+      mediaRefs.current.forEach((el) => {
+        if (el instanceof HTMLVideoElement) {
+          if (isPlaying) el.play().catch(() => {}); // Catch play errors (e.g. user hasn't interacted)
+          else el.pause();
+        }
+      });
+      
+      if (audioRef.current) {
+        if (isPlaying) audioRef.current.play().catch(() => {});
+        else audioRef.current.pause();
+      }
+    };
+    
+    syncMedia();
+  }, [isPlaying, tracks]); // Sync when isPlaying changes or tracks are added/removed
+
+  const togglePlay = useCallback(() => {
+    setIsPlaying(prev => !prev);
+  }, []);
+
   // Sync audio element with tracks
   useEffect(() => {
     const musicTrack = tracks.find(t => t.type === 'audio');
@@ -171,6 +196,17 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
     document.addEventListener('fullscreenchange', handleFsChange);
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
+
+  const isBeatSyncEnabledRef = useRef(true);
+  const isPlayingRef = useRef(true);
+
+  useEffect(() => {
+    isBeatSyncEnabledRef.current = isBeatSyncEnabled;
+  }, [isBeatSyncEnabled]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
@@ -233,18 +269,22 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
     const time = Date.now() / 1000;
     
     // Beat Sync Logic
-    if (analyserRef.current && dataArrayRef.current) {
+    if (isPlayingRef.current && isBeatSyncEnabledRef.current && analyserRef.current && dataArrayRef.current) {
       analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-      const average = dataArrayRef.current.reduce((a, b) => a + b) / dataArrayRef.current.length;
+      // Focus on bass frequencies (first 10% of bins) for more "Tiger" impact
+      const bassBins = dataArrayRef.current.slice(0, Math.floor(dataArrayRef.current.length * 0.1));
+      const average = bassBins.reduce((a, b) => a + b, 0) / bassBins.length;
       beatIntensityRef.current = average / 255;
+    } else {
+      beatIntensityRef.current = 0;
     }
     
     const currentBeat = beatIntensityRef.current;
-    const beatScale = 1 + currentBeat * 0.15; // Pulse based on actual music beat
+    const beatScale = 1 + currentBeat * 0.2; // Increased pulse for more "swag"
     
     const parallaxX = Math.sin(time * 0.5) * 15 * beatScale; // Subtle 3D sway
     const parallaxY = Math.cos(time * 0.3) * 10 * beatScale;
-    const currentGlow = glowIntensityRef.current;
+    const currentGlow = glowIntensityRef.current + currentBeat * 0.5; // Glow pulses with beat
 
     // --- PRO-VFX PARTICLE GENERATION ---
     if (currentFilter === 'sacred-wolf' || currentFilter === 'wolf-forest' || currentFilter === 'gold-palace') {
@@ -495,13 +535,18 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
     const loop = async () => {
       if (isDestroyedRef.current) return;
 
-      // Always render the current state
-      processFrame(lastResultsRef.current);
+      // Only process if playing
+      if (isPlayingRef.current) {
+        processFrame(lastResultsRef.current);
+      } else {
+        // Still render the last frame to avoid black screen
+        processFrame(lastResultsRef.current);
+      }
 
       try {
         const currentSelectedTrack = tracksRef.current.find(t => t.id === selectedTrackIdRef.current);
         
-        if (isEngineReady && segmentationRef.current && !isProcessingFrameRef.current && 
+        if (isPlayingRef.current && isEngineReady && segmentationRef.current && !isProcessingFrameRef.current && 
             currentSelectedTrack && currentSelectedTrack.type !== 'audio' && currentSelectedTrack.isBgRemoved) {
           
           const source = mediaRefs.current.get(currentSelectedTrack.id);
@@ -801,6 +846,38 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
         </div>
       )}
 
+      {/* Music Library Modal */}
+      {isMusicLibraryOpen && (
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-md bg-zinc-950 border-t sm:border border-zinc-800 rounded-t-[40px] sm:rounded-[40px] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-500">
+            <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-pink-600/20 rounded-2xl flex items-center justify-center border border-pink-500/30">
+                  <Music className="w-5 h-5 text-pink-500" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest">Tiger Music Hub</h3>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">Select your swag beats</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsMusicLibraryOpen(false)}
+                className="p-3 bg-zinc-900 hover:bg-zinc-800 rounded-2xl text-zinc-400 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto no-scrollbar">
+              <MusicLibrary 
+                onSelectMusic={handleSelectMusic}
+                onBeatSyncToggle={setIsBeatSyncEnabled}
+                isBeatSyncEnabled={isBeatSyncEnabled}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin Panel */}
       {isAdminOpen && (
         <AdminPanel 
@@ -914,6 +991,23 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
               className="w-full h-full object-contain"
             />
 
+            {/* Master Play/Pause Overlay */}
+            <div 
+              onClick={togglePlay}
+              className="absolute inset-0 z-50 flex items-center justify-center cursor-pointer group/play"
+            >
+              {!isPlaying && (
+                <div className="w-24 h-24 bg-black/60 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20 shadow-2xl animate-in zoom-in duration-300">
+                  <Play className="w-10 h-10 text-white fill-white ml-1" />
+                </div>
+              )}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover/play:opacity-100 transition-opacity">
+                <div className="px-4 py-2 bg-zinc-900/80 backdrop-blur-md rounded-full border border-zinc-800 text-[10px] font-black text-white uppercase tracking-widest shadow-xl">
+                  {isPlaying ? "Click to Pause" : "Click to Play"}
+                </div>
+              </div>
+            </div>
+
             {/* Hidden Admin Trigger (Invisible button over watermark) */}
             <button 
               onClick={handleAdminTrigger}
@@ -974,8 +1068,31 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
 
         {/* Controls Area - Stacked Below for Thumb Access */}
         <div className="px-4 py-6 space-y-8 bg-black">
+          {/* Master Controls Title */}
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Master Controls</h3>
+            <div className={cn(
+              "w-1.5 h-1.5 rounded-full transition-all duration-500",
+              isPlaying ? "bg-green-500 animate-pulse" : "bg-zinc-700"
+            )} />
+          </div>
+
           {/* Quick Actions Scroll */}
           <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+            <button
+              onClick={togglePlay}
+              className={cn(
+                "flex-shrink-0 flex flex-col items-center justify-center gap-2 w-24 h-24 border rounded-3xl transition-all active:scale-95",
+                isPlaying 
+                  ? "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white" 
+                  : "bg-pink-600 border-pink-500 text-white shadow-lg shadow-pink-500/20"
+              )}
+            >
+              {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 fill-current" />}
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {isPlaying ? "Pause" : "Play"}
+              </span>
+            </button>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex-shrink-0 flex flex-col items-center justify-center gap-2 w-24 h-24 bg-zinc-900 border border-zinc-800 rounded-3xl text-zinc-400 hover:text-white transition-all active:scale-95"
@@ -1017,21 +1134,52 @@ export default function Editor({ initialMedia, onReset }: EditorProps) {
             {tracks.some(t => t.type === 'audio') && (
               <div className="p-6 bg-zinc-900/40 border border-zinc-800/50 rounded-[32px] space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Music className="w-4 h-4 text-pink-500" />
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Music Engine</span>
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-2xl flex items-center justify-center border transition-all duration-500",
+                      isPlaying ? "bg-pink-600/20 border-pink-500/30 animate-pulse" : "bg-zinc-800 border-zinc-700"
+                    )}>
+                      <Music className={cn("w-5 h-5", isPlaying ? "text-pink-500" : "text-zinc-500")} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Music Engine</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">
+                          {isPlaying ? "Now Playing..." : "Paused"}
+                        </span>
+                        {isPlaying && (
+                          <div className="flex items-center gap-0.5">
+                            <div className="w-0.5 h-2 bg-pink-500/40 animate-[music-bar_0.5s_ease-in-out_infinite]" />
+                            <div className="w-0.5 h-3 bg-pink-500/60 animate-[music-bar_0.7s_ease-in-out_infinite]" />
+                            <div className="w-0.5 h-2 bg-pink-500/40 animate-[music-bar_0.6s_ease-in-out_infinite]" />
+                          </div>
+                        )}
+                        <div className="w-1 h-1 rounded-full bg-zinc-800" />
+                        <span className={cn(
+                          "text-[9px] font-bold uppercase tracking-tighter",
+                          isBeatSyncEnabled ? "text-pink-500" : "text-zinc-700"
+                        )}>
+                          Beat-Sync: {isBeatSyncEnabled ? "ON" : "OFF"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <button 
-                    onClick={() => {
-                      if (audioRef.current) {
-                        if (isMusicPlaying) audioRef.current.pause();
-                        else audioRef.current.play();
-                      }
-                    }}
-                    className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 transition-all"
-                  >
-                    {isMusicPlaying ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={togglePlay}
+                      className={cn(
+                        "p-3 rounded-2xl transition-all active:scale-90 flex items-center gap-2 border",
+                        isPlaying 
+                          ? "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800" 
+                          : "bg-pink-600 text-white border-pink-500 shadow-lg shadow-pink-500/20 hover:bg-pink-500"
+                      )}
+                    >
+                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                      <span className="text-[10px] font-black uppercase tracking-widest">
+                        {isPlaying ? "Pause" : "Play"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Seek Bar */}
